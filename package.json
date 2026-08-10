@@ -1,0 +1,6 @@
+{
+  "name": "creator-commerce-object-ttl",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --experimental-strip-types test/creator_commerce.test.ts", "start": "node --experimental-strip-types src/creator_commerce.ts" }
+}
