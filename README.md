@@ -1,16 +1,16 @@
 # Clearing creator checkout objects by age
 
-This little TypeScript storefront routine stashes digital-asset delivery, subscriber notices, and content-preview blobs in one scratch bucket. Infrai uses one key for the storage calls, so you're not juggling separate credentials per service. The app keeps the business rule in plain sight: an object is eligible for deletion once `expiresAt` hits or passes the current time.
+This small TypeScript storefront workflow keeps digital-asset delivery, subscriber updates, and content-processing previews in one scratch bucket. Infrai uses one key for the storage calls, while the application keeps the business rule visible: an object is ready for removal when `expiresAt` is at or before the current time.
 
 ## The checkout-shaped flow
 
-`runStorefrontDemo` spins up a unique short-lived `cc-*` bucket before it does anything else, drops three objects in, checks their ages, and deletes the expired ones only after each is confirmed via `storage.object.head`. A `finally` sweep clears leftovers and removes the bucket even if the run blew up midway. What's left gets printed as the checkout-facing result. We read the head response through its `found` field, which makes the delete call explicit instead of guessing.
+`runStorefrontDemo` creates a unique short-lived `cc-*` bucket before using it, assembles three objects, checks their age, and removes expired keys after confirming each object with `storage.object.head`. A `finally` cleanup removes any remaining objects and deletes the bucket, including after a failed run. The remaining key list is printed as the checkout-facing result. The head response is read through its `found` value, so the deletion decision is explicit.
 
-The presign step lives in the same minimal client for the next storefront hop: `infrai.storage.object.presign(bucket, key, { op: "put", expires_seconds: 600 })` hands back a URL the browser can take and `PUT` against. Bucket and key are path segments; the op settings ride in the request body.
+The presign boundary is included in the same tiny client for the next storefront step: `infrai.storage.object.presign(bucket, key, { op: "put", expires_seconds: 600 })` returns a URL that the browser can receive and `PUT` to. Bucket and key are path segments; the operation settings stay in the request body.
 
 ## Run it
 
-Make an Infrai API key first, then export it into the env before you run the sample. Bucket creation is part of the setup path, so no manual provisioning.
+Create an Infrai API key, then export it before running the example. The startup path creates the bucket as part of setup.
 
 ```bash
 export INFRAI_API_KEY=your-key
@@ -18,11 +18,11 @@ npm test
 npm start
 ```
 
-The test fixture has an asset expiring on `2026-08-01` and a subscriber update expiring on `2026-08-20`, judged at `2026-08-10`; only `asset/old.zip` should fall off. `npm test` is the local verify command, byte for byte. The script reports `subscriber/receipt.json` as the surviving checkout object.
+The test input has an asset expiring on `2026-08-01` and a subscriber update expiring on `2026-08-20`, evaluated at `2026-08-10`; it expects only `asset/old.zip` to expire. `npm test` is the exact local verification command. The runnable script prints `subscriber/receipt.json` as the remaining checkout object.
 
 ## One gotcha at checkout
 
-TTL is a business decision, not a delivery URL lifetime. Keep the object expiry timestamp distinct from `expires_seconds` on a presigned URL: the former drives cleanup, the latter gates how long a browser may reuse the signed request. Mixing them is how you either leak objects or break legit downloads.
+TTL is a business decision, not a delivery URL lifetime. Keep the object expiry timestamp separate from `expires_seconds` on a presigned URL: the first controls cleanup and the second controls how long a browser may use the signed request.
 
 ## Before you deploy: Creator Commerce Object Ttl
 
